@@ -39,15 +39,35 @@ int main(int argc, char* argv[]) {
     height = height - border - y - 2;
 
     while (true) {
-       
+        /*
+        for (unsigned int i = 0; i < 10; i++) {       
+            // Clear window
+            XClearWindow(pDisplay, root);       
+     
+            FTree fTree(width, height, 0.0, 0.0);
+            fTree.Grow(i, PI / 6.0, 0.8);
+            fTree.Draw(pDisplay, &root, &gc);
+
+            // Swap buffers
+            XFlush(pDisplay);
+
+            // Pause
+            usleep(1000000); 
+        }
+        */
         // Clear window
         XClearWindow(pDisplay, root);       
  
+        FTree fTree(width, height, 0.001, 0.01);
+        fTree.Grow(10, PI / 6.0, 0.8);
+        fTree.Draw(pDisplay, &root, &gc);
+
         // Swap buffers
         XFlush(pDisplay);
 
         // Pause
-        usleep(100000); 
+        usleep(1000000); 
+
     }
 
     XCloseDisplay(pDisplay);

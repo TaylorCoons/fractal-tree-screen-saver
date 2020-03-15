@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<screensaver name="ftree" _label="Fractal Tree">
+
+  <command arg="-root"/>
+
+  <hgroup>
+   <vgroup>
+    <number id="points" type="slider" arg="-points %"
+            _label="Max Points" _low-label="100" _high-label="10000"
+            low="100" high="10000" default="2000" />
+
+    <number id="capacity" type="slider" arg="-capacity %"
+            _label="Capacity" _low-label="4" _high-label="32"
+             low="4" high="32" default="8" />
+   </vgroup>
+
+  <xscreensaver-updater />
+
+  <_description>
+Generates particles based on a random distribution. These particles are then sorted into a Quad Tree and each is drawn on the screen
+
+Written by Taylor Coons.
+  </_description>
+</screensaver>
