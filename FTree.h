@@ -74,6 +74,7 @@ class FTree {
     unsigned int width;
     unsigned int height; 
     unsigned int numBranches = 2;
+    unsigned int startHeight;
     double deltaAngle = 0.0;
     double deltaScale = 0.0;
     unsigned int numLevels = 0;
@@ -88,14 +89,16 @@ class FTree {
 
     /* Functions */
     public:
-    FTree(unsigned int width, unsigned int height, double deltaAngle, double deltaScale) {
+    FTree(unsigned int width, unsigned int height, double deltaAngle, 
+          double deltaScale, int startHeight) {
         this->width = width;
         this->height = height;
         this->deltaAngle = deltaAngle;  
         this->deltaScale = deltaScale;
+        this->startHeight = startHeight;
         pTrunk = new Branch;
         pTrunk->start = Point(width / 2, height);
-        pTrunk->end = Point(width / 2, height - 200);
+        pTrunk->end = Point(width / 2, height - startHeight);
     }
 
     Color MapColor(unsigned int levels) {

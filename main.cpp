@@ -258,14 +258,17 @@ int main(int argc, char* argv[]) {
     Pixmap* backBuffer = &blueBuffer; 
     while (true) {
         Color start(rand() % 256, rand() % 256, rand() % 256);
-        Color end(rand() % 256, rand() % 256, rand() % 256);      
+        Color end(rand() % 256, rand() % 256, rand() % 256);
+        double heightVar = static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+        int startHeight = static_cast<double>(height) * 0.2;
+        startHeight += heightVar * startHeight * 0.2;      
         double angle = RandDouble() * (maxAngle - minAngle) + minAngle;
         angle = angle * PI / 180.0;
         double scale = RandDouble() * (maxScale - minScale) + minScale;
         double deltaAngle = RandDouble() * (maxDeltaAngle - minDeltaAngle) + minDeltaAngle;
         deltaAngle = deltaAngle * PI / 180.0;
         double deltaScale = RandDouble() * (maxDeltaScale - minDeltaScale) + minDeltaScale; 
-        FTree fTree(width, height, deltaAngle, deltaScale);
+        FTree fTree(width, height, deltaAngle, deltaScale, startHeight);
         fTree.SetStartColor(start);
         fTree.SetEndColor(end);
         fTree.Grow(9, angle, scale);
