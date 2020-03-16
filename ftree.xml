@@ -44,6 +44,17 @@
              low="-0.2" high="0.2" default="0.01" />
    </hgroup>
   </vgroup> 
+  <vgroup>
+   <hgroup>
+    <number id="speed" type="slider" arg="-speed %"
+            _label="Animation Speed" _low-label="Slow" _high-label="Fast"
+            low="0.1" high="10.0" default="1.0" />
+
+    <number id="pause" type="slider" arg="-pause %"
+            _label="Pause Time" _low-label="Short" _high-label="Long"
+             low="0.0" high="30.0" default="10.0" />
+   </hgroup>
+  </vgroup>
 
 
 

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <ctime>
 
 #include "CLIParser/CLIParser.h"
 
@@ -24,51 +25,58 @@ CLIParser::OPTIONS InitOptions() {
     options["minAngle"] = {
         "-minAngle",
         "-a",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["maxAngle"] = {
         "-maxAngle",
         "-b",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["minScale"] = {
         "-minScale",
         "-v",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["maxScale"] = {
         "-maxScale",
         "-w",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["minDeltaAngle"] = {
         "-minDeltaAngle",
         "-d",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["maxDeltaAngle"] = {
         "-maxDeltaAngle",
         "-e",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["minDeltaScale"] = {
         "-minDeltaScale",
         "-y",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
     options["maxDeltaScale"] = {
         "-maxDeltaScale",
         "-z",
-        CLIParser::ARG_TYPE::OPTIONAL_ARG,
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
+    options["animationSpeed"] = {
+        "-speed",
+        "-s",
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
+        CLIParser::OPT_TYPE::OPTIONAL_OPT
+    };
+        
     return options;
 }
 
@@ -168,6 +176,16 @@ int main(int argc, char* argv[]) {
             std::cerr << "maxDeltaScale out of range" << std::endl;
         }
     }
+    double speed = 1.0;
+    if (options["animationSpeed"].flag) {
+        try {
+            speed = std::stod(options["animationSpeed"].result);
+        } catch (std::invalid_argument const& e) {
+            std::cerr << "speed must be a double" << std::endl;
+        } catch (std::out_of_range const& e) {
+            std::cerr << "speed out of range" << std::endl;
+        }
+    }
 
     if (minAngle > maxAngle) {
         Swap(minAngle, maxAngle);
@@ -185,6 +203,10 @@ int main(int argc, char* argv[]) {
         Swap(minDeltaScale, maxDeltaScale);
     }
 
+    double fps = 144.0;
+    double framePeriod = 1.0 / fps;
+    double pauseTime = 10.0;
+
     // Seed random
     srand(time(0));
     
@@ -197,8 +219,11 @@ int main(int argc, char* argv[]) {
     // Get a handle to the root window
     Window root = DefaultRootWindow(pDisplay);
 
+
     // Create graphics context
     GC gc = XCreateGC(pDisplay, root, 0, NULL);
+
+    XMapWindow(pDisplay, root);
 
     Window windowReturn;
     int x;
@@ -208,11 +233,14 @@ int main(int argc, char* argv[]) {
     XGetGeometry(pDisplay, root, &windowReturn, &x, &y, &width, 
                       &height, &border, &depth);
 
-    width = width - border - x - 2;
-    height = height - border - y - 2;
+    width = width - border - x;
+    height = height - border - y;
 
+    Pixmap redBuffer = XCreatePixmap(pDisplay, root, width, height, depth);
+    Pixmap blueBuffer = XCreatePixmap(pDisplay, root, width, height, depth); 
+    Pixmap* frontBuffer = &redBuffer;
+    Pixmap* backBuffer = &blueBuffer; 
     while (true) {
-
         Color start(rand() % 256, rand() % 256, rand() % 256);
         Color end(rand() % 256, rand() % 256, rand() % 256);      
         double angle = RandDouble() * (maxAngle - minAngle) + minAngle;
@@ -225,36 +253,39 @@ int main(int argc, char* argv[]) {
         fTree.SetStartColor(start);
         fTree.SetEndColor(end);
         fTree.Grow(9, angle, scale);
-        fTree.StartAnimation(1);
-        while (!fTree.AnimationFinished()) {       
-            // Clear window
-            XClearWindow(pDisplay, root);       
+        fTree.StartAnimation(speed);
+        clock_t prevTime = clock();
+        while (!fTree.AnimationFinished()) {           
+            clock_t currTime = clock(); 
+            double timeElapsed = static_cast<double>(currTime - prevTime) / CLOCKS_PER_SEC; 
 
-            fTree.DrawAnimationStep(pDisplay, &root, &gc);   
+            if (timeElapsed > framePeriod) {
+                prevTime = currTime;
 
-            // Swap buffers
-            XFlush(pDisplay);
 
-            // Pause
-            usleep(10000); 
+                // Push front buffer to screen
+                XCopyArea(pDisplay, *frontBuffer, root, gc, 0, 0, width, height, 0, 0);
+
+                // Clear buffer
+                XSetForeground(pDisplay, gc, 0x000000);
+                XFillRectangle(pDisplay, *backBuffer, gc, x, y, width, height);
+
+                // Draw animation
+                fTree.DrawAnimationStep(pDisplay, backBuffer, &gc);   
+                
+                // Present 
+                XSync(pDisplay, False);
+               
+                // Swap buffers 
+                Pixmap* tmpBuffer = frontBuffer;
+                frontBuffer = backBuffer;
+                backBuffer = tmpBuffer;
+            }
         }
-        usleep(1000000);
-        /*
-        // Clear window
-        XClearWindow(pDisplay, root);       
- 
-        FTree fTree(width, height, 0.001, 0.01);
-        fTree.SetStartColor(rand() % 256, rand() % 256, rand() % 256);
-        fTree.SetEndColor(rand() % 256, rand() % 256, rand() % 256);
-        fTree.Grow(10, PI / 6.0, 0.8);
-        fTree.Draw(pDisplay, &root, &gc);
-
-        // Swap buffers
-        XFlush(pDisplay);
-
-        // Pause
-        usleep(1000000); 
-        */
+        prevTime = clock();
+        while (static_cast<double>(clock() - prevTime) / CLOCKS_PER_SEC < pauseTime) {
+            (void)0;
+        }
     }
 
     XCloseDisplay(pDisplay);
