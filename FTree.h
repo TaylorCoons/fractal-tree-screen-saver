@@ -165,7 +165,7 @@ class FTree {
             }
             vec = vec * (desiredDist / dist);
             
-            XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
+            XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapRound, JoinRound);
             XSetForeground(pDisplay, *pGC, pBranch->color); 
             XDrawLine(
                 pDisplay, 
@@ -194,7 +194,7 @@ class FTree {
         if (levels == 0) {
            return; 
         }
-        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
+        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapRound, JoinRound);
         XSetForeground(pDisplay, *pGC, pBranch->color);
         XDrawLine(
             pDisplay, 
@@ -255,7 +255,7 @@ class FTree {
     }
 
     void DrawRec(Branch* pBranch, Display* pDisplay, Window* pWindow, GC* pGC) {
-        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
+        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapRound, JoinRound);
         XSetForeground(pDisplay, *pGC, pBranch->color);
         XDrawLine(
             pDisplay, 
