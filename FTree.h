@@ -41,7 +41,30 @@ struct Branch {
     Point start;
     Point end;
     unsigned long int color;
+    unsigned int width;
     Branch** pBranches;
+};
+
+struct Color {
+    short red;
+    short green;
+    short blue;
+ 
+    Color() {
+        this->red = red;
+        this->blue = blue;
+        this->green = green;
+    }
+   
+    Color(short red, short green, short blue) {
+        this->red = red;
+        this->blue = blue;
+        this->green = green;
+    }
+    
+    unsigned long int GetLong() {
+        return (red << 16) + (green << 8) + blue;
+    }
 };
 
 class FTree {
@@ -54,7 +77,15 @@ class FTree {
     double deltaAngle = 0.0;
     double deltaScale = 0.0;
     unsigned int numLevels = 0;
- 
+    Color startColor;
+    Color endColor;
+    int startThickness = 10;
+    bool animationFinished = false;
+    unsigned int animationLevel = 0;
+    bool branchFinished = false;
+    double stepDist = 0;
+    double stepTotalDist = 0;
+
     /* Functions */
     public:
     FTree(unsigned int width, unsigned int height, double deltaAngle, double deltaScale) {
@@ -65,12 +96,126 @@ class FTree {
         pTrunk = new Branch;
         pTrunk->start = Point(width / 2, height);
         pTrunk->end = Point(width / 2, height - 200);
-        pTrunk->color = (255 << 16) + (255 << 8) + 255;
+    }
+
+    Color MapColor(unsigned int levels) {
+        Color color;
+        if (numLevels == 0) {
+            return endColor;
+        }
+        double perc = static_cast<double>(levels) / static_cast<double>(numLevels);
+        color.red = static_cast<double>(endColor.red - startColor.red) * perc;
+        color.red += startColor.red;
+        color.green = static_cast<double>(endColor.green - startColor.green) * perc;
+        color.green += startColor.green;
+        color.blue = static_cast<double>(endColor.blue - startColor.blue) * perc;
+        color.blue += startColor.blue;
+        return color;
+    }
+
+    void SetStartColor(Color start) {
+        startColor = start;
+    }
+
+    void SetEndColor(Color end) {
+        endColor = end;
     }
 
     void Grow(unsigned int numLevels, double startAngle, double startScale) {
         this->numLevels = numLevels;
+        pTrunk->color = MapColor(numLevels).GetLong();
+        pTrunk->width = startThickness;
         BranchRec(pTrunk, numLevels, startAngle, startScale); 
+    }
+
+    void StartAnimation(double stepDist) {
+        this->stepDist = stepDist;
+        stepTotalDist = 0;
+        animationLevel = 0;
+        animationFinished = false;
+    }
+
+    void DrawAnimationStep(Display* pDisplay, Window* pWindow, GC* pGC) {
+        stepTotalDist += stepDist;
+        AnimateLevel(pTrunk, animationLevel, pDisplay, pWindow, pGC);
+        if (branchFinished) {
+            stepTotalDist = 0;
+            animationLevel++;
+            branchFinished = false;
+        } 
+        DrawLevels(pTrunk, animationLevel, pDisplay, pWindow, pGC);
+    }
+
+    bool AnimationFinished() {
+        return animationFinished;
+    }
+
+    void AnimateLevel(Branch* pBranch, unsigned int level, Display* pDisplay,
+                      Window* pWindow, GC* pGC) {
+        if (level == 0) {
+            Point vec = pBranch->end - pBranch->start;
+            double dist = sqrt(pow(vec.x, 2.0) + pow(vec.y, 2.0));
+            double desiredDist = stepTotalDist;
+            if (stepTotalDist > dist) {
+                branchFinished = true;
+                desiredDist = dist;
+                if (animationLevel == numLevels) {
+                    animationFinished = true;
+                }
+            }
+            vec = vec * (desiredDist / dist);
+            
+            XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
+            XSetForeground(pDisplay, *pGC, pBranch->color); 
+            XDrawLine(
+                pDisplay, 
+                *pWindow, 
+                *pGC, 
+                pBranch->start.x, 
+                pBranch->start.y, 
+                pBranch->start.x + vec.x, 
+                pBranch->start.y + vec.y
+            );    
+        } else {
+            level--;
+            if (pBranch->pBranches != nullptr) {
+                if (pBranch->pBranches[0] != nullptr) {
+                    AnimateLevel(pBranch->pBranches[0], level, pDisplay, pWindow, pGC);
+                }
+                if (pBranch->pBranches[1] != nullptr) {
+                    AnimateLevel(pBranch->pBranches[1], level, pDisplay, pWindow, pGC);
+                }
+            }
+        }
+    }
+
+    void DrawLevels(Branch* pBranch, unsigned int levels, Display* pDisplay, 
+                    Window* pWindow, GC* pGC) {
+        if (levels == 0) {
+           return; 
+        }
+        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
+        XSetForeground(pDisplay, *pGC, pBranch->color);
+        XDrawLine(
+            pDisplay, 
+            *pWindow, 
+            *pGC, 
+            pBranch->start.x, 
+            pBranch->start.y, 
+            pBranch->end.x, 
+            pBranch->end.y
+        ); 
+        levels--;
+        if (pBranch->pBranches != nullptr) {
+            if (pBranch->pBranches[0] != nullptr) {
+                DrawLevels(pBranch->pBranches[0], levels, pDisplay, pWindow, pGC);
+            }
+            if (pBranch->pBranches[1] != nullptr) {
+                DrawLevels(pBranch->pBranches[1], levels, pDisplay, pWindow, pGC);
+            }
+        }
+
+        
     }
 
     void BranchRec(Branch* pBranch, unsigned int levels, double angle, double scale) {
@@ -92,12 +237,9 @@ class FTree {
         vecRight.y = vec.x * sin(-angle) + vec.y * cos(-angle);
         pLeft->end = pBranch->end + vecLeft;
         pRight->end = pBranch->end + vecRight;
-        double perc = static_cast<double>(levels) / static_cast<double>(numLevels);
-        short red = 255 - static_cast<short>(255.0 * perc);
-        short green = 0 + static_cast<short>(255.0 * perc);
-        short blue = 255;
-        pLeft->color = (red << 16) + (green << 8) + blue;
-        pRight->color = (red << 16) + (green << 8) + blue;
+        Color color = MapColor(levels); 
+        pLeft->color = pRight->color = color.GetLong();
+        pLeft->width = pRight->width = startThickness - (numLevels - levels) - 1;
         pBranch->pBranches[0] = pLeft;
         pBranch->pBranches[1] = pRight;
  
@@ -113,7 +255,7 @@ class FTree {
     }
 
     void DrawRec(Branch* pBranch, Display* pDisplay, Window* pWindow, GC* pGC) {
-        XSetLineAttributes(pDisplay, *pGC, 1, LineSolid, CapButt, JoinBevel);
+        XSetLineAttributes(pDisplay, *pGC, pBranch->width, LineSolid, CapButt, JoinBevel);
         XSetForeground(pDisplay, *pGC, pBranch->color);
         XDrawLine(
             pDisplay, 

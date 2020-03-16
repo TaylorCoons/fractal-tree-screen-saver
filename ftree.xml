@@ -4,16 +4,48 @@
 
   <command arg="-root"/>
 
-  <hgroup>
-   <vgroup>
-    <number id="points" type="slider" arg="-points %"
-            _label="Max Points" _low-label="100" _high-label="10000"
-            low="100" high="10000" default="2000" />
+  <vgroup>
+   <hgroup>
+    <number id="minAngle" type="slider" arg="-minAngle %"
+            _label="Minimum Angle" _low-label="5.0" _high-label="90.0"
+            low="10.0" high="90.0" default="35.0" />
 
-    <number id="capacity" type="slider" arg="-capacity %"
-            _label="Capacity" _low-label="4" _high-label="32"
-             low="4" high="32" default="8" />
-   </vgroup>
+    <number id="maxAngle" type="slider" arg="-maxAngle %"
+            _label="Maximum Angle" _low-label="5.0" _high-label="90.0"
+             low="10.0" high="90.0" default="45.0" />
+   </hgroup>
+   <hgroup>
+    <number id="minScale" type="slider" arg="-minScale %"
+            _label="Minimum Scale" _low-label="0.5" _high-label="1.0"
+            low="0.5" high="1.0" default="0.7" />
+
+    <number id="maxScale" type="slider" arg="-maxScale %"
+            _label="Maximum Scale" _low-label="0.5" _high-label="1.0"
+             low="0.5" high="1.0" default="0.9" />
+   </hgroup>
+  </vgroup>
+  <vgroup>
+   <hgroup>
+    <number id="minDeltaAngle" type="slider" arg="-minDeltaAngle %"
+            _label="Minimum Delta Angle" _low-label="-20.0" _high-label="20.0"
+            low="-10.0" high="10.0" default="-7.0" />
+
+    <number id="maxDeltaAngle" type="slider" arg="-maxDeltaAngle %"
+            _label="Maximum Delta Angle" _low-label="-20.0" _high-label="20.0"
+             low="-10.0" high="10.0" default="5.0" />
+   </hgroup>
+   <hgroup>
+    <number id="minDeltaScale" type="slider" arg="-minDeltaScale %"
+            _label="Minimum Delta Scale" _low-label="-0.2" _high-label="0.2"
+            low="-0.2" high="0.2" default="-0.01" />
+
+    <number id="maxDeltaScale" type="slider" arg="-maxDeltaScale %"
+            _label="Maximim Delta Scale" _low-label="-0.2" _high-label="0.2"
+             low="-0.2" high="0.2" default="0.01" />
+   </hgroup>
+  </vgroup> 
+
+
 
   <xscreensaver-updater />
 
