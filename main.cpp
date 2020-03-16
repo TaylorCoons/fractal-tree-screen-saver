@@ -76,6 +76,12 @@ CLIParser::OPTIONS InitOptions() {
         CLIParser::ARG_TYPE::REQUIRED_ARG,
         CLIParser::OPT_TYPE::OPTIONAL_OPT
     };
+    options["pauseTime"] = {
+        "-pause",
+        "-p",
+        CLIParser::ARG_TYPE::REQUIRED_ARG,
+        CLIParser::OPT_TYPE::OPTIONAL_OPT
+    };
         
     return options;
 }
@@ -186,6 +192,17 @@ int main(int argc, char* argv[]) {
             std::cerr << "speed out of range" << std::endl;
         }
     }
+    double pauseTime = 10.0;
+    if (options["pauseTime"].flag) {
+        try {
+            pauseTime = std::stod(options["pauseTime"].result);
+        } catch (std::invalid_argument const& e) {
+            std::cerr << "pause time must be a double" << std::endl;
+        } catch (std::out_of_range const& e) {
+            std::cerr << "pause time out of range" << std::endl;
+        }
+    }
+
 
     if (minAngle > maxAngle) {
         Swap(minAngle, maxAngle);
@@ -205,7 +222,6 @@ int main(int argc, char* argv[]) {
 
     double fps = 144.0;
     double framePeriod = 1.0 / fps;
-    double pauseTime = 10.0;
 
     // Seed random
     srand(time(0));
